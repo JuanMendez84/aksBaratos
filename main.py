@@ -1,5 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
+import time
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
 
 class Juego:
     url=""
@@ -15,8 +20,15 @@ class Juego:
         return "Nombre:{}\nURL:{}\nPrecio:{}\n\n".format(self.nombre, self.url, self.precio)
     
     def obtiene_soup(self):
-        req = requests.get(self.url)
-        soup = BeautifulSoup(req.text, features="html.parser")
+        driver = webdriver.Chrome()
+        driver.get(self.url)
+
+        wait = WebDriverWait(driver, 10)
+        element = wait.until(EC.presence_of_element_located((By.ID, 'offers_table')))
+        html = driver.page_source
+        driver.close()
+
+        soup = BeautifulSoup(html, features="html.parser")
 
         return soup
 
@@ -46,8 +58,15 @@ for i,fila in enumerate(filas_wl):
 
 for juego in lista_juegos:
     soup_juego = juego.obtiene_soup()
-    tabla_tiendas = soup.select("table")
-    print(tabla_tiendas)
+    tabla_tiendas = soup_juego.select("#offers_table .offers-table-row.x-offer")
+
+    for tienda in tabla_tiendas:
+        nombre_tienda=tienda.select(".x-offer-merchant-name.offers-merchant-name")[0].getText()
+        plataforma_steam=len(tienda.select(".x-offer-platform-logo.sprite.sprite-30-steam"))
+        precio_tienda=tienda.select(".x-offer-buy-btn-in-stock.text-left")[0].getText()[:-1]
+        print(nombre_tienda,plataforma_steam,precio_tienda)
+
+    #print(soup_juego.select("div")[1])
     break
 
 #hola
